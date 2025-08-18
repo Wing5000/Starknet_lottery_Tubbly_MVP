@@ -119,9 +119,19 @@ export default function App() {
 
   async function connect() {
     if (!window.starknet_braavos) {
-      alert("Please install Braavos Wallet");
+      // Redirect users to Braavos site if the wallet isn't installed
+      window.open("https://braavos.app/", "_blank");
       return;
     }
+
+    // Ask the user to connect their Braavos wallet
+    try {
+      await window.starknet_braavos.enable();
+    } catch {
+      alert("Connection to Braavos wallet was rejected.");
+      return;
+    }
+
     const prov = new BrowserProvider(window.starknet_braavos);
     const net = await prov.getNetwork();
     const chainId = net.chainId.toString();

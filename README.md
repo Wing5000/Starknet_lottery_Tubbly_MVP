@@ -2,7 +2,7 @@
 
 Casino-style dApp UI for the `BlockInstantLottery` contract.
 
-- Connect Braavos StarkNet wallet (Sepolia)
+- Connect [Braavos](https://braavos.app/) StarkNet wallet (Sepolia)
 - Play (1 try / address / block), instant result
 - Claim pending prizes, fund the pot
 - Owner panel to update params
