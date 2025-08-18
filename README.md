@@ -2,7 +2,7 @@
 
 Casino-style dApp UI for the `BlockInstantLottery` contract.
 
-- Connect MetaMask (Sepolia 11155111)
+- Connect Braavos StarkNet wallet (Sepolia)
 - Play (1 try / address / block), instant result
 - Claim pending prizes, fund the pot
 - Owner panel to update params
@@ -14,7 +14,7 @@ npm i
 npm run dev
 ```
 
-Open http://localhost:5173 and connect MetaMask (Sepolia).
+Open http://localhost:5173 and connect your Braavos wallet (StarkNet Sepolia).
 
 ## Build
 
@@ -31,7 +31,7 @@ The static site is in `dist/` — perfect for Vercel/Netlify.
 
 ## How it works
 
-- Open the site and connect your MetaMask wallet on the Sepolia testnet.
+- Open the site and connect your Braavos wallet on the StarkNet Sepolia testnet.
 - Click **Play** to try your luck.
 - The app instantly tells you if you won or lost.
 - If you win, click **Claim** to receive your prize.
