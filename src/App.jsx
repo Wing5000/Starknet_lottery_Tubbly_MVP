@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import logo from "./assets/tubbly-logo.svg";
 
-const CONTRACT_ADDRESS = "0x1e6492d25C4890Ccc49389fc50385e6FA25c5477";
+const CONTRACT_ADDRESS = "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
 
 // Minimal ABI for the functions/events we use
 const ABI = [
@@ -51,7 +51,7 @@ const ABI = [
 ];
 
 const PPM_DEN = 1_000_000;
-const SEPOLIA_CHAIN_ID = 11155111;
+const STARKNET_SEPOLIA_CHAIN_ID = "0x534e5f5345504f4c4941";
 
 function pctFromPpm(ppm) {
   return Number(ppm) / 10_000; // 10000 ppm = 1%
@@ -124,12 +124,13 @@ export default function App() {
     }
     const prov = new BrowserProvider(window.ethereum);
     const net = await prov.getNetwork();
-    setNetworkOk(Number(net.chainId) === SEPOLIA_CHAIN_ID);
-    if (Number(net.chainId) !== SEPOLIA_CHAIN_ID) {
+    const chainId = net.chainId.toString();
+    setNetworkOk(chainId === STARKNET_SEPOLIA_CHAIN_ID);
+    if (chainId !== STARKNET_SEPOLIA_CHAIN_ID) {
       try {
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xaa36a7" }], // 11155111
+          params: [{ chainId: STARKNET_SEPOLIA_CHAIN_ID }],
         });
       } catch {}
     }
@@ -765,7 +766,7 @@ export default function App() {
                         {shortAddr(r.player)}
                       </span>
                       <a
-                        href={`https://sepolia.etherscan.io/tx/${r.txHash}`}
+                        href={`https://sepolia.starkscan.co/tx/${r.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center"
@@ -907,7 +908,7 @@ export default function App() {
                 <div key={idx} className="text-zinc-300">
                   • {l.txHash ? (
                     <a
-                      href={`https://sepolia.etherscan.io/tx/${l.txHash}`}
+                      href={`https://sepolia.starkscan.co/tx/${l.txHash}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline"
