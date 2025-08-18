@@ -110,35 +110,37 @@ export default function App() {
   }, [account, currentBlock, nextAllowedBlock]);
 
   useEffect(() => {
-    if (!window.starknet_braavos) return;
-    const prov = new BrowserProvider(window.starknet_braavos);
+    const wallet = window.starknet_braavos || window.starknet;
+    if (!wallet) return;
+    const prov = new BrowserProvider(wallet);
     setProvider(prov);
     const c = new Contract(CONTRACT_ADDRESS, ABI, prov);
     setContract(c);
   }, []);
 
   async function connect() {
-    if (!window.starknet_braavos) {
-      // Redirect users to Braavos site if the wallet isn't installed
+    const wallet = window.starknet_braavos || window.starknet;
+    if (!wallet) {
+      // Redirect users to Braavos site if no Starknet wallet is detected
       window.open("https://braavos.app/", "_blank");
       return;
     }
 
-    // Ask the user to connect their Braavos wallet
+    // Ask the user to connect their wallet
     try {
-      await window.starknet_braavos.enable();
+      await wallet.enable?.();
     } catch {
-      alert("Connection to Braavos wallet was rejected.");
+      alert("Connection to Starknet wallet was rejected.");
       return;
     }
 
-    const prov = new BrowserProvider(window.starknet_braavos);
+    const prov = new BrowserProvider(wallet);
     const net = await prov.getNetwork();
     const chainId = net.chainId.toString();
     setNetworkOk(chainId === STARKNET_SEPOLIA_CHAIN_ID);
     if (chainId !== STARKNET_SEPOLIA_CHAIN_ID) {
       try {
-        await window.starknet_braavos.request({
+        await wallet.request({
           method: "wallet_switchStarknetChain",
           params: [{ chainId: STARKNET_SEPOLIA_CHAIN_ID }],
         });
@@ -150,7 +152,7 @@ export default function App() {
       // Request accounts using the modern wallet API
       accounts = await prov.send("wallet_requestAccounts", []);
     } catch {
-      // Fallback for older versions of Braavos
+      // Fallback for older versions of wallets
       accounts = await prov.send("starknet_requestAccounts", []);
     }
     const s = await prov.getSigner();
