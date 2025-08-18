@@ -135,7 +135,14 @@ export default function App() {
       } catch {}
     }
 
-    const accounts = await prov.send("starknet_requestAccounts", []);
+    let accounts;
+    try {
+      // Request accounts using the modern wallet API
+      accounts = await prov.send("wallet_requestAccounts", []);
+    } catch {
+      // Fallback for older versions of Braavos
+      accounts = await prov.send("starknet_requestAccounts", []);
+    }
     const s = await prov.getSigner();
 
     setProvider(prov);
