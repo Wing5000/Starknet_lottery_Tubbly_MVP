@@ -110,32 +110,32 @@ export default function App() {
   }, [account, currentBlock, nextAllowedBlock]);
 
   useEffect(() => {
-    if (!window.ethereum) return;
-    const prov = new BrowserProvider(window.ethereum);
+    if (!window.starknet_braavos) return;
+    const prov = new BrowserProvider(window.starknet_braavos);
     setProvider(prov);
     const c = new Contract(CONTRACT_ADDRESS, ABI, prov);
     setContract(c);
   }, []);
 
   async function connect() {
-    if (!window.ethereum) {
-      alert("Please install MetaMask");
+    if (!window.starknet_braavos) {
+      alert("Please install Braavos Wallet");
       return;
     }
-    const prov = new BrowserProvider(window.ethereum);
+    const prov = new BrowserProvider(window.starknet_braavos);
     const net = await prov.getNetwork();
     const chainId = net.chainId.toString();
     setNetworkOk(chainId === STARKNET_SEPOLIA_CHAIN_ID);
     if (chainId !== STARKNET_SEPOLIA_CHAIN_ID) {
       try {
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
+        await window.starknet_braavos.request({
+          method: "wallet_switchStarknetChain",
           params: [{ chainId: STARKNET_SEPOLIA_CHAIN_ID }],
         });
       } catch {}
     }
 
-    const accounts = await prov.send("eth_requestAccounts", []);
+    const accounts = await prov.send("starknet_requestAccounts", []);
     const s = await prov.getSigner();
 
     setProvider(prov);
