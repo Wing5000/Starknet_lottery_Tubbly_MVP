@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
+import { formatEther, parseEther } from "ethers";
+import { Contract } from "starknet";
 import logo from "./assets/tubbly-logo.svg";
 
 const CONTRACT_ADDRESS = "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
@@ -110,65 +111,53 @@ export default function App() {
   }, [account, currentBlock, nextAllowedBlock]);
 
   useEffect(() => {
-    const wallet = window.starknet_braavos || window.starknet;
+    const wallet = window.starknet_braavos;
     if (!wallet) return;
-    const prov = new BrowserProvider(wallet);
-    setProvider(prov);
-    const c = new Contract(CONTRACT_ADDRESS, ABI, prov);
+    setProvider(wallet.provider);
+    const c = new Contract(ABI, CONTRACT_ADDRESS, wallet.provider);
     setContract(c);
   }, []);
 
   async function connect() {
-    const wallet = window.starknet_braavos || window.starknet;
+    const wallet = window.starknet_braavos;
     if (!wallet) {
       // Redirect users to Braavos site if no Starknet wallet is detected
       window.open("https://braavos.app/", "_blank");
       return;
     }
 
-    // Ask the user to connect their wallet
     try {
-      await wallet.enable?.();
+      await wallet.enable();
     } catch {
       alert("Connection to Starknet wallet was rejected.");
       return;
     }
 
-    const prov = new BrowserProvider(wallet);
-    const net = await prov.getNetwork();
-    const chainId = net.chainId.toString();
-    setNetworkOk(chainId === STARKNET_SEPOLIA_CHAIN_ID);
-    if (chainId !== STARKNET_SEPOLIA_CHAIN_ID) {
-      try {
-        await wallet.request({
-          method: "wallet_switchStarknetChain",
-          params: [{ chainId: STARKNET_SEPOLIA_CHAIN_ID }],
-        });
-      } catch {}
-    }
+    setProvider(wallet.provider);
+    setSigner(wallet.account);
+    const accountAddr = wallet.account.address;
+    setAccount(accountAddr);
 
-    let accounts;
-    try {
-      // Request accounts using the modern wallet API
-      accounts = await prov.send("wallet_requestAccounts", []);
-    } catch {
-      // Fallback for older versions of wallets
-      accounts = await prov.send("starknet_requestAccounts", []);
-    }
-    const s = await prov.getSigner();
-
-    setProvider(prov);
-    setSigner(s);
-    setAccount(accounts[0]);
-
-    const c = new Contract(CONTRACT_ADDRESS, ABI, s);
+    const c = new Contract(ABI, CONTRACT_ADDRESS, wallet.account);
     setContract(c);
-    
-    // POPRAWKA: Od razu pobierz dane użytkownika po połączeniu
-    if (accounts[0]) {
+
+    try {
+      const chainId = await wallet.provider.getChainId();
+      setNetworkOk(chainId === STARKNET_SEPOLIA_CHAIN_ID);
+      if (chainId !== STARKNET_SEPOLIA_CHAIN_ID) {
+        try {
+          await wallet.request({
+            method: "wallet_switchStarknetChain",
+            params: [{ chainId: STARKNET_SEPOLIA_CHAIN_ID }],
+          });
+        } catch {}
+      }
+    } catch {}
+
+    if (accountAddr) {
       try {
-        const blk = await prov.getBlockNumber();
-        const next = await c.nextAllowedBlock(accounts[0]);
+        const blk = await wallet.provider.getBlockNumber();
+        const next = await c.nextAllowedBlock(accountAddr);
         setCurrentBlock(BigInt(blk));
         setNextAllowedBlock(next);
       } catch (e) {
@@ -226,12 +215,11 @@ export default function App() {
     if (!provider || !account || !contract) return;
     let mounted = true;
 
-    async function handleBlockUpdate(blockNumber) {
+    async function pollBlock() {
       if (!mounted) return;
-      setCurrentBlock(BigInt(blockNumber));
-      
-      // Zawsze aktualizuj nextAllowedBlock gdy zmienia się blok
       try {
+        const blockNumber = await provider.getBlockNumber();
+        setCurrentBlock(BigInt(blockNumber));
         const next = await contract.nextAllowedBlock(account);
         if (mounted) {
           setNextAllowedBlock(next);
@@ -241,19 +229,18 @@ export default function App() {
       }
     }
 
-    provider.on("block", handleBlockUpdate);
-    
-    // Natychmiast pobierz obecny blok
-    provider.getBlockNumber().then(handleBlockUpdate);
+    pollBlock();
+    const iv = setInterval(pollBlock, 5000);
 
     return () => {
       mounted = false;
-      provider.off("block", handleBlockUpdate);
+      clearInterval(iv);
     };
   }, [provider, account, contract]);
 
   useEffect(() => {
     if (!contract || !provider) return;
+    if (!contract.queryFilter || !contract.filters) return;
     let mounted = true;
     const filter = contract.filters.Result();
 
@@ -318,6 +305,10 @@ export default function App() {
 
   useEffect(() => {
     if (!contract || !account) {
+      setLogLines([]);
+      return;
+    }
+    if (!contract.queryFilter || !contract.filters) {
       setLogLines([]);
       return;
     }
@@ -398,35 +389,37 @@ export default function App() {
 
       let won = null;
       let prize = 0n;
-      for (const log of rcpt.logs) {
-        try {
-          const parsed = contract.interface.parseLog(log);
-          if (parsed?.name === "Result") {
-            won = parsed.args.won;
-            prize = parsed.args.prizeAmount;
-            addLog({
-              text: parsed.args.won
-                ? `Result → WIN ${formatEther(parsed.args.prizeAmount)} ETH`
-                : "Result → Loss",
-              txHash: rcpt.transactionHash,
-            });
-          }
-          if (parsed?.name === "PrizePaid") {
-            addLog({
-              text: `PrizePaid → ${formatEther(parsed.args.amount)} ETH`,
-              txHash: rcpt.transactionHash,
-            });
-          }
-          if (parsed?.name === "PrizePending") {
-            addLog({
-              text: `PrizePending → ${formatEther(parsed.args.amount)} ETH`,
-              txHash: rcpt.transactionHash,
-            });
-            // Aktualizuj pending prizes
-            const newPending = await contract.pendingPrizes(account);
-            setPendingMine(newPending);
-          }
-        } catch {}
+      if (contract.interface?.parseLog) {
+        for (const log of rcpt.logs) {
+          try {
+            const parsed = contract.interface.parseLog(log);
+            if (parsed?.name === "Result") {
+              won = parsed.args.won;
+              prize = parsed.args.prizeAmount;
+              addLog({
+                text: parsed.args.won
+                  ? `Result → WIN ${formatEther(parsed.args.prizeAmount)} ETH`
+                  : "Result → Loss",
+                txHash: rcpt.transactionHash,
+              });
+            }
+            if (parsed?.name === "PrizePaid") {
+              addLog({
+                text: `PrizePaid → ${formatEther(parsed.args.amount)} ETH`,
+                txHash: rcpt.transactionHash,
+              });
+            }
+            if (parsed?.name === "PrizePending") {
+              addLog({
+                text: `PrizePending → ${formatEther(parsed.args.amount)} ETH`,
+                txHash: rcpt.transactionHash,
+              });
+              // Aktualizuj pending prizes
+              const newPending = await contract.pendingPrizes(account);
+              setPendingMine(newPending);
+            }
+          } catch {}
+        }
       }
 
       if (won === true) {
