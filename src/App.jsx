@@ -370,8 +370,7 @@ export default function App() {
       setRejected(false);
 
       const saltVal = BigInt(salt || "0");
-      const overrides = { value: feeWei };
-      const tx = await contract.play(saltVal, overrides);
+      const tx = await contract.withOptions({ value: feeWei }).play(saltVal);
       addLog({ text: `play(tx: ${shortHash(tx.hash)})`, txHash: tx.hash });
       
       const rcpt = await tx.wait();
@@ -512,7 +511,9 @@ export default function App() {
       setStatus("");
       setProgressMessage("Funding in action...");
       setRejected(false);
-      const tx = await contract.fund({ value: parseEther(amountEth || "0") });
+      const tx = await contract
+        .withOptions({ value: parseEther(amountEth || "0") })
+        .fund();
       addLog({
         text: `fund ${amountEth} ETH (tx: ${shortHash(tx.hash)})`,
         txHash: tx.hash,
