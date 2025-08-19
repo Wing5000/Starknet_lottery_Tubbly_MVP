@@ -97,24 +97,24 @@ mod BlockInstantLottery {
     }
 
     #[view]
-    fn lastPlayedBlock(self: @ContractState, player: ContractAddress) -> u64 {
-        self.last_played_block.read(player)
+    fn get_user_last_played_block(self: @ContractState, user: ContractAddress) -> u64 {
+        self.last_played_block.read(user)
     }
 
     #[view]
-    fn pendingPrizes(self: @ContractState, player: ContractAddress) -> u256 {
-        self.pending_prizes.read(player)
+    fn get_pending_prizes(self: @ContractState, user: ContractAddress) -> u256 {
+        self.pending_prizes.read(user)
     }
 
     #[view]
-    fn nextAllowedBlock(self: @ContractState, player: ContractAddress) -> u64 {
-        self.last_played_block.read(player) + 1_u64
+    fn get_next_allowed_block(self: @ContractState, user: ContractAddress) -> u64 {
+        self.last_played_block.read(user) + 1_u64
     }
 
     #[view]
-    fn canPlayNow(self: @ContractState, player: ContractAddress) -> bool {
+    fn get_can_play(self: @ContractState, user: ContractAddress) -> bool {
         let cur = get_block_number();
-        cur >= self.nextAllowedBlock(player)
+        cur >= self.get_next_allowed_block(user)
     }
 
     // --- Write ---

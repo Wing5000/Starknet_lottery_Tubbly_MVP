@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatEther, parseEther } from "ethers";
 import { Contract, uint256 } from "starknet";
@@ -18,10 +18,10 @@ const ABI = [
   { "type": "function", "name": "winChancePpm", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint32" }] },
   { "type": "function", "name": "owner", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "felt" }] },
   { "type": "function", "name": "contractBalance", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "lastPlayedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "felt" }] },
-  { "type": "function", "name": "pendingPrizes", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "canPlayNow", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "bool" }] },
-  { "type": "function", "name": "nextAllowedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "felt" }] },
+  { "type": "function", "name": "get_user_last_played_block", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "felt" }] },
+  { "type": "function", "name": "get_pending_prizes", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "uint256" }] },
+  { "type": "function", "name": "get_can_play", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "bool" }] },
+  { "type": "function", "name": "get_next_allowed_block", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "felt" }] },
 
   // --- Write ---
   {
@@ -96,6 +96,7 @@ export default function App() {
   const [lastPlayedBlock, setLastPlayedBlock] = useState(0n);
   const [currentBlock, setCurrentBlock] = useState(0n);
   const [nextAllowedBlock, setNextAllowedBlock] = useState(0n);
+  const [canPlay, setCanPlay] = useState(false);
 
   // UI state
   const [salt, setSalt] = useState(String(Math.floor(Math.random() * 1e12)));
@@ -118,15 +119,6 @@ export default function App() {
     const s = String(h);
     return `${s.slice(0, 10)}…`;
   };
-
-  // POPRAWKA: Ulepszona logika sprawdzania czy można grać
-  const canPlay = useMemo(() => {
-    if (!account) return false;
-    // Jeśli nigdy nie grałeś (nextAllowedBlock = 0), możesz grać
-    if (nextAllowedBlock === 0n) return true;
-    // W przeciwnym razie sprawdź czy obecny blok >= następny dozwolony
-    return currentBlock >= nextAllowedBlock;
-  }, [account, currentBlock, nextAllowedBlock]);
 
   useEffect(() => {
     const wallet = window.starknet_braavos;
@@ -174,10 +166,16 @@ export default function App() {
 
     if (accountAddr) {
       try {
-        const blk = await wallet.provider.getBlockNumber();
-        const next = await c.nextAllowedBlock(accountAddr);
+        const [blk, next, last, can] = await Promise.all([
+          wallet.provider.getBlockNumber(),
+          c.get_next_allowed_block(accountAddr),
+          c.get_user_last_played_block(accountAddr),
+          c.get_can_play(accountAddr),
+        ]);
         setCurrentBlock(BigInt(blk));
         setNextAllowedBlock(toBigInt(next));
+        setLastPlayedBlock(toBigInt(last));
+        setCanPlay(Boolean(can));
       } catch (e) {
         console.error("Error loading user data on connect:", e);
       }
@@ -194,6 +192,7 @@ export default function App() {
     setLastPlayedBlock(0n);
     setCurrentBlock(0n);
     setNextAllowedBlock(0n); // POPRAWKA: Resetuj także nextAllowedBlock
+    setCanPlay(false);
     setWonState(null); // POPRAWKA: Resetuj stan wygranej
     setStatus(""); // POPRAWKA: Wyczyść status
   }
@@ -236,11 +235,15 @@ export default function App() {
     async function pollBlock() {
       if (!mounted) return;
       try {
-        const blockNumber = await provider.getBlockNumber();
+        const [blockNumber, next, can] = await Promise.all([
+          provider.getBlockNumber(),
+          contract.get_next_allowed_block(account),
+          contract.get_can_play(account),
+        ]);
         setCurrentBlock(BigInt(blockNumber));
-        const next = await contract.nextAllowedBlock(account);
         if (mounted) {
           setNextAllowedBlock(toBigInt(next));
+          setCanPlay(Boolean(can));
         }
       } catch (e) {
         console.error("Error updating nextAllowedBlock:", e);
@@ -297,16 +300,18 @@ export default function App() {
 
     async function loadUserData() {
       try {
-        const [pend, last, next, blk] = await Promise.all([
-          contract.pendingPrizes(account),
-          contract.lastPlayedBlock(account),
-          contract.nextAllowedBlock(account),
+        const [pend, last, next, can, blk] = await Promise.all([
+          contract.get_pending_prizes(account),
+          contract.get_user_last_played_block(account),
+          contract.get_next_allowed_block(account),
+          contract.get_can_play(account),
           provider.getBlockNumber(),
         ]);
         if (!mounted) return;
         setPendingMine(toBigInt(pend));
         setLastPlayedBlock(toBigInt(last));
         setNextAllowedBlock(toBigInt(next));
+        setCanPlay(Boolean(can));
         setCurrentBlock(BigInt(blk));
       } catch (e) {
         console.error("Error loading user data:", e);
@@ -396,14 +401,16 @@ export default function App() {
       const rcpt = await provider.waitForTransaction(txHash);
       
       // POPRAWKA: Natychmiast po transakcji pobierz zaktualizowane dane
-      const [newLastPlayed, newNext, newBlock] = await Promise.all([
-        contract.lastPlayedBlock(account),
-        contract.nextAllowedBlock(account),
+      const [newLastPlayed, newNext, newCan, newBlock] = await Promise.all([
+        contract.get_user_last_played_block(account),
+        contract.get_next_allowed_block(account),
+        contract.get_can_play(account),
         provider.getBlockNumber()
       ]);
-      
+
       setLastPlayedBlock(toBigInt(newLastPlayed));
       setNextAllowedBlock(toBigInt(newNext));
+      setCanPlay(Boolean(newCan));
       setCurrentBlock(BigInt(newBlock));
 
       let won = null;
@@ -435,7 +442,7 @@ export default function App() {
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
               // Aktualizuj pending prizes
-              const newPending = await contract.pendingPrizes(account);
+              const newPending = await contract.get_pending_prizes(account);
               setPendingMine(toBigInt(newPending));
             }
           } catch {}
@@ -471,6 +478,7 @@ export default function App() {
         blk,
         next,
         last,
+        can,
         pend,
         prize,
         fee,
@@ -478,9 +486,10 @@ export default function App() {
         bal,
       ] = await Promise.all([
         provider.getBlockNumber(),
-        contract.nextAllowedBlock(account),
-        contract.lastPlayedBlock(account),
-        contract.pendingPrizes(account),
+        contract.get_next_allowed_block(account),
+        contract.get_user_last_played_block(account),
+        contract.get_can_play(account),
+        contract.get_pending_prizes(account),
         contract.prizeWei(),
         contract.entryFeeWei(),
         contract.winChancePpm(),
@@ -492,6 +501,7 @@ export default function App() {
       setCurrentBlock(current);
       setNextAllowedBlock(nextVal);
       setLastPlayedBlock(lastVal);
+      setCanPlay(Boolean(can));
       setPendingMine(toBigInt(pend));
       setPrizeWei(toBigInt(prize));
       setFeeWei(toBigInt(fee));
@@ -516,7 +526,7 @@ export default function App() {
       await provider.waitForTransaction(txHash);
       setStatus("Claimed (if any pending)");
       // Odśwież pending prizes
-      const newPending = await contract.pendingPrizes(account);
+      const newPending = await contract.get_pending_prizes(account);
       setPendingMine(toBigInt(newPending));
     } catch (e) {
       setStatus(e?.shortMessage || e?.message || "Claim failed");
