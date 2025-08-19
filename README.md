@@ -24,6 +24,10 @@ npm run build
 
 The static site is in `dist/` — perfect for Vercel/Netlify.
 
+## Deployment
+
+Vercel's default `npm install` fails on the peer dependency declared by `@argent/get-starknet`. The repo ships with an `.npmrc` file that sets `legacy-peer-deps=true` so the build can succeed on Vercel and other CI environments.
+
 ## Configure
 
 - Contract address comes from `VITE_CONTRACT_ADDRESS` in `.env`.
