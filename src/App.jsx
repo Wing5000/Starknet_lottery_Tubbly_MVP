@@ -17,11 +17,11 @@ const FN = {
   winChancePpm: "winChancePpm",
   owner: "owner",
   contractBalance: "contractBalance",
-  // Older deployed contract exposes camelCase entrypoints
-  getUserLastPlayedBlock: "getUserLastPlayedBlock",
-  getPendingPrizes: "getPendingPrizes",
-  getCanPlay: "getCanPlay",
-  getNextAllowedBlock: "getNextAllowedBlock",
+  // Deployed contract exposes snake_case getters
+  getUserLastPlayedBlock: "get_user_last_played_block",
+  getPendingPrizes: "get_pending_prizes",
+  getCanPlay: "get_can_play",
+  getNextAllowedBlock: "get_next_allowed_block",
   play: "play",
   claim: "claim",
   fund: "fund",
