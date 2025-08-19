@@ -12,12 +12,12 @@ const ABI = [
   { "type": "function", "name": "prizeWei", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
   { "type": "function", "name": "entryFeeWei", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
   { "type": "function", "name": "winChancePpm", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint32" }] },
-  { "type": "function", "name": "owner", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "address" }] },
+  { "type": "function", "name": "owner", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "felt" }] },
   { "type": "function", "name": "contractBalance", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "lastPlayedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "address" }], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "pendingPrizes", "stateMutability": "view", "inputs": [{ "name": "player", "type": "address" }], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "canPlayNow", "stateMutability": "view", "inputs": [{ "name": "player", "type": "address" }], "outputs": [{ "type": "bool" }] },
-  { "type": "function", "name": "nextAllowedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "address" }], "outputs": [{ "type": "uint256" }] },
+  { "type": "function", "name": "lastPlayedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "felt" }] },
+  { "type": "function", "name": "pendingPrizes", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "uint256" }] },
+  { "type": "function", "name": "canPlayNow", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "bool" }] },
+  { "type": "function", "name": "nextAllowedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "felt" }], "outputs": [{ "type": "felt" }] },
 
   // --- Write ---
   {
@@ -38,16 +38,16 @@ const ABI = [
 
   // --- Events we decode ---
   { "type": "event", "name": "Result", "inputs": [
-      { "name": "player", "type": "address", "indexed": true },
+      { "name": "player", "type": "felt", "indexed": true },
       { "name": "won", "type": "bool", "indexed": false },
       { "name": "prizeAmount", "type": "uint256", "indexed": false }
   ] },
   { "type": "event", "name": "PrizePaid", "inputs": [
-      { "name": "to", "type": "address", "indexed": true },
+      { "name": "to", "type": "felt", "indexed": true },
       { "name": "amount", "type": "uint256", "indexed": false }
   ] },
   { "type": "event", "name": "PrizePending", "inputs": [
-      { "name": "to", "type": "address", "indexed": true },
+      { "name": "to", "type": "felt", "indexed": true },
       { "name": "amount", "type": "uint256", "indexed": false }
   ] },
   { "type": "event", "name": "ParamsUpdated", "inputs": [
