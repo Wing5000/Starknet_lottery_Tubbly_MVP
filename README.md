@@ -26,7 +26,8 @@ The static site is in `dist/` — perfect for Vercel/Netlify.
 
 ## Configure
 
-- Contract address is set in `src/App.jsx` (`CONTRACT_ADDRESS`).
+- Set the deployed contract address via the `VITE_CONTRACT_ADDRESS` environment
+  variable (falls back to the default in `src/App.jsx`).
 - Uses ethers v6. RNG uses block data (not secure for big prizes).
 
 ## How it works
