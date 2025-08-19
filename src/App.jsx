@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
+import { connect as connectStarknet } from "@argent/get-starknet";
 import logo from "./assets/tubbly-logo.svg";
 
 const CONTRACT_ADDRESS = "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
@@ -110,16 +111,23 @@ export default function App() {
   }, [account, currentBlock, nextAllowedBlock]);
 
   useEffect(() => {
-    const wallet = window.starknet_braavos || window.starknet;
-    if (!wallet) return;
-    const prov = new BrowserProvider(wallet);
-    setProvider(prov);
-    const c = new Contract(CONTRACT_ADDRESS, ABI, prov);
-    setContract(c);
+    async function init() {
+      const wallet =
+        (await connectStarknet({ modalMode: "neverAsk" }).catch(() => null)) ||
+        window.starknet_braavos ||
+        window.starknet;
+      if (!wallet) return;
+      const prov = new BrowserProvider(wallet);
+      setProvider(prov);
+      const c = new Contract(CONTRACT_ADDRESS, ABI, prov);
+      setContract(c);
+    }
+    init();
   }, []);
 
   async function connect() {
-    const wallet = window.starknet_braavos || window.starknet;
+    let wallet = await connectStarknet().catch(() => null);
+    if (!wallet) wallet = window.starknet_braavos || window.starknet;
     if (!wallet) {
       // Redirect users to Braavos site if no Starknet wallet is detected
       window.open("https://braavos.app/", "_blank");
