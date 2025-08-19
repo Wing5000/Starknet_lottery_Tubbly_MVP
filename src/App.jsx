@@ -20,7 +20,13 @@ const ABI = [
   { "type": "function", "name": "nextAllowedBlock", "stateMutability": "view", "inputs": [{ "name": "player", "type": "address" }], "outputs": [{ "type": "uint256" }] },
 
   // --- Write ---
-  { "type": "function", "name": "play", "stateMutability": "payable", "inputs": [{ "name": "userSalt", "type": "uint256" }], "outputs": [{ "type": "bool" }] },
+  {
+    "type": "function",
+    "name": "play",
+    "stateMutability": "payable",
+    "inputs": [{ "name": "userSalt", "type": "felt" }],
+    "outputs": [{ "type": "bool" }]
+  },
   { "type": "function", "name": "claim", "stateMutability": "nonpayable", "inputs": [], "outputs": [] },
   { "type": "function", "name": "fund", "stateMutability": "payable", "inputs": [], "outputs": [] },
   { "type": "function", "name": "ownerWithdraw", "stateMutability": "nonpayable", "inputs": [{ "name": "amount", "type": "uint256" }], "outputs": [] },
