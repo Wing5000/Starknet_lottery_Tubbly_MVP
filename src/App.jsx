@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatEther, parseEther } from "ethers";
-import { Contract } from "starknet";
+import { Contract, uint256 } from "starknet";
 import logo from "./assets/tubbly-logo.svg";
 
 const CONTRACT_ADDRESS = "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
@@ -66,6 +66,14 @@ function pctFromPpm(ppm) {
 
 function ppmFromPct(pct) {
   return Math.round(parseFloat(String(pct)) * 10_000);
+}
+
+function toBigInt(value) {
+  if (typeof value === "bigint") return value;
+  if (value && typeof value === "object" && "low" in value && "high" in value) {
+    return uint256.uint256ToBN(value);
+  }
+  return BigInt(value ?? 0);
 }
 
 export default function App() {
@@ -165,7 +173,7 @@ export default function App() {
         const blk = await wallet.provider.getBlockNumber();
         const next = await c.nextAllowedBlock(accountAddr);
         setCurrentBlock(BigInt(blk));
-        setNextAllowedBlock(next);
+        setNextAllowedBlock(toBigInt(next));
       } catch (e) {
         console.error("Error loading user data on connect:", e);
       }
@@ -199,10 +207,10 @@ export default function App() {
           contract.contractBalance(),
         ]);
         if (!mounted) return;
-        setPrizeWei(p);
-        setFeeWei(f);
+        setPrizeWei(toBigInt(p));
+        setFeeWei(toBigInt(f));
         setChancePpm(Number(w));
-        setContractBal(bal);
+        setContractBal(toBigInt(bal));
       } catch (e) {
         console.error("Error loading contract basics:", e);
       }
@@ -228,7 +236,7 @@ export default function App() {
         setCurrentBlock(BigInt(blockNumber));
         const next = await contract.nextAllowedBlock(account);
         if (mounted) {
-          setNextAllowedBlock(next);
+          setNextAllowedBlock(toBigInt(next));
         }
       } catch (e) {
         console.error("Error updating nextAllowedBlock:", e);
@@ -292,9 +300,9 @@ export default function App() {
           provider.getBlockNumber(),
         ]);
         if (!mounted) return;
-        setPendingMine(pend);
-        setLastPlayedBlock(last);
-        setNextAllowedBlock(next);
+        setPendingMine(toBigInt(pend));
+        setLastPlayedBlock(toBigInt(last));
+        setNextAllowedBlock(toBigInt(next));
         setCurrentBlock(BigInt(blk));
       } catch (e) {
         console.error("Error loading user data:", e);
@@ -390,8 +398,8 @@ export default function App() {
         provider.getBlockNumber()
       ]);
       
-      setLastPlayedBlock(newLastPlayed);
-      setNextAllowedBlock(newNext);
+      setLastPlayedBlock(toBigInt(newLastPlayed));
+      setNextAllowedBlock(toBigInt(newNext));
       setCurrentBlock(BigInt(newBlock));
 
       let won = null;
@@ -403,28 +411,28 @@ export default function App() {
             const parsed = contract.interface.parseLog(log);
             if (parsed?.name === "Result") {
               won = parsed.args.won;
-              prize = parsed.args.prizeAmount;
+              prize = toBigInt(parsed.args.prizeAmount);
               addLog({
                 text: parsed.args.won
-                  ? `Result → WIN ${formatEther(parsed.args.prizeAmount)} ETH`
+                  ? `Result → WIN ${formatEther(toBigInt(parsed.args.prizeAmount))} ETH`
                   : "Result → Loss",
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
             }
             if (parsed?.name === "PrizePaid") {
               addLog({
-                text: `PrizePaid → ${formatEther(parsed.args.amount)} ETH`,
+                text: `PrizePaid → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
             }
             if (parsed?.name === "PrizePending") {
               addLog({
-                text: `PrizePending → ${formatEther(parsed.args.amount)} ETH`,
+                text: `PrizePending → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
               // Aktualizuj pending prizes
               const newPending = await contract.pendingPrizes(account);
-              setPendingMine(newPending);
+              setPendingMine(toBigInt(newPending));
             }
           } catch {}
         }
@@ -475,15 +483,17 @@ export default function App() {
         contract.contractBalance(),
       ]);
       const current = BigInt(blk);
+      const nextVal = toBigInt(next);
+      const lastVal = toBigInt(last);
       setCurrentBlock(current);
-      setNextAllowedBlock(next);
-      setLastPlayedBlock(last);
-      setPendingMine(pend);
-      setPrizeWei(prize);
-      setFeeWei(fee);
+      setNextAllowedBlock(nextVal);
+      setLastPlayedBlock(lastVal);
+      setPendingMine(toBigInt(pend));
+      setPrizeWei(toBigInt(prize));
+      setFeeWei(toBigInt(fee));
       setChancePpm(Number(chance));
-      setContractBal(bal);
-      if (current >= next) {
+      setContractBal(toBigInt(bal));
+      if (current >= nextVal) {
         setStatus("New block detected! You can play now.");
       } else {
         setStatus("");
@@ -503,7 +513,7 @@ export default function App() {
       setStatus("Claimed (if any pending)");
       // Odśwież pending prizes
       const newPending = await contract.pendingPrizes(account);
-      setPendingMine(newPending);
+      setPendingMine(toBigInt(newPending));
     } catch (e) {
       setStatus(e?.shortMessage || e?.message || "Claim failed");
       addLog({ text: `Error: ${e?.shortMessage || e?.message}` });
