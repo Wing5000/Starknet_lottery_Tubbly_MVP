@@ -1,8 +1,8 @@
-# Lucky Block — Instant Lottery (Sepolia)
+# Lucky Block — Instant Lottery (Starknet)
 
-Casino-style dApp UI for the `BlockInstantLottery` contract.
+Casino-style dApp UI for the `BlockInstantLottery` contract deployed on Starknet.
 
-- Connect [Braavos](https://braavos.app/) StarkNet wallet (Sepolia)
+- Connect [Braavos](https://braavos.app/) or [Argent X](https://www.argent.xyz/argent-x/) wallet
 - Play (1 try / address / block), instant result
 - Claim pending prizes, fund the pot
 - Owner panel to update params
@@ -10,11 +10,11 @@ Casino-style dApp UI for the `BlockInstantLottery` contract.
 ## Quick start
 
 ```bash
-npm i
+npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and connect your Braavos wallet (StarkNet Sepolia).
+Create a `.env` file based on `.env.example` and set `VITE_CONTRACT_ADDRESS` to your deployed contract address. Open http://localhost:5173 and connect your wallet.
 
 ## Build
 
@@ -24,14 +24,19 @@ npm run build
 
 The static site is in `dist/` — perfect for Vercel/Netlify.
 
+## Deployment
+
+Vercel's default `npm install` fails on the peer dependency declared by `@argent/get-starknet`. The repo ships with an `.npmrc` file that sets `legacy-peer-deps=true` so the build can succeed on Vercel and other CI environments.
+
 ## Configure
 
-- Contract address is set in `src/App.jsx` (`CONTRACT_ADDRESS`).
-- Uses ethers v6. RNG uses block data (not secure for big prizes).
+- Contract address comes from `VITE_CONTRACT_ADDRESS` in `.env`.
+- Uses [`starknet.js`](https://github.com/starknet-io/starknet.js) v6 and [`@argent/get-starknet`](https://github.com/argentlabs/argent-js/tree/master/packages/get-starknet).
+- RNG uses block data (not secure for big prizes).
 
 ## How it works
 
-- Open the site and connect your Braavos wallet on the StarkNet Sepolia testnet.
+- Open the site and connect your wallet on the Starknet Sepolia testnet.
 - Click **Play** to try your luck.
 - The app instantly tells you if you won or lost.
 - If you win, click **Claim** to receive your prize.

@@ -1,10 +1,8 @@
-%lang starknet
-
-use starknet::contract::ContractAddress;
-use starknet::contract::get_caller_address;
-use starknet::block::get_block_number;
+use starknet::contract_address::ContractAddress;
+use starknet::context::get_caller_address;
+use starknet::info::get_block_number;
 use starknet::hash::pedersen;
-use starknet::storage::{LegacyMap};
+use starknet::storage::Map;
 
 const PPM_DEN: u128 = 1_000_000;
 
@@ -18,39 +16,39 @@ mod BlockInstantLottery {
         prize_wei: u256,
         entry_fee_wei: u256,
         win_chance_ppm: u32,
-        pending_prizes: LegacyMap<ContractAddress, u256>,
-        last_played_block: LegacyMap<ContractAddress, u64>,
+        pending_prizes: Map<ContractAddress, u256>,
+        last_played_block: Map<ContractAddress, u64>,
     }
 
     #[event]
-    #[derive(Drop, starknet::Event)]
+    #[derive(starknet::Event)]
     enum Event {
-        Result: Result,
-        PrizePaid: PrizePaid,
-        PrizePending: PrizePending,
-        ParamsUpdated: ParamsUpdated,
+        Result(Result),
+        PrizePaid(PrizePaid),
+        PrizePending(PrizePending),
+        ParamsUpdated(ParamsUpdated),
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(starknet::Event)]
     struct Result {
         player: ContractAddress,
         won: bool,
         prize_amount: u256,
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(starknet::Event)]
     struct PrizePaid {
         to: ContractAddress,
         amount: u256,
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(starknet::Event)]
     struct PrizePending {
         to: ContractAddress,
         amount: u256,
     }
 
-    #[derive(Drop, starknet::Event)]
+    #[derive(starknet::Event)]
     struct ParamsUpdated {
         prize_wei: u256,
         entry_fee_wei: u256,
@@ -58,12 +56,7 @@ mod BlockInstantLottery {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        prize_wei: u256,
-        entry_fee_wei: u256,
-        win_chance_ppm: u32,
-    ) {
+    fn constructor(ref self: ContractState, prize_wei: u256, entry_fee_wei: u256, win_chance_ppm: u32) {
         self.owner.write(get_caller_address());
         self.prize_wei.write(prize_wei);
         self.entry_fee_wei.write(entry_fee_wei);
@@ -71,54 +64,38 @@ mod BlockInstantLottery {
     }
 
     // --- Read ---
-    #[external(v0)]
-    fn prizeWei(self: @ContractState) -> u256 {
-        self.prize_wei.read()
-    }
+    #[external]
+    fn prizeWei(self: @ContractState) -> u256 { self.prize_wei.read() }
 
-    #[external(v0)]
-    fn entryFeeWei(self: @ContractState) -> u256 {
-        self.entry_fee_wei.read()
-    }
+    #[external]
+    fn entryFeeWei(self: @ContractState) -> u256 { self.entry_fee_wei.read() }
 
-    #[external(v0)]
-    fn winChancePpm(self: @ContractState) -> u32 {
-        self.win_chance_ppm.read()
-    }
+    #[external]
+    fn winChancePpm(self: @ContractState) -> u32 { self.win_chance_ppm.read() }
 
-    #[external(v0)]
-    fn owner(self: @ContractState) -> ContractAddress {
-        self.owner.read()
-    }
+    #[external]
+    fn owner(self: @ContractState) -> ContractAddress { self.owner.read() }
 
-    #[view]
-    fn contractBalance(self: @ContractState) -> u256 {
-        starknet::contract::contract_balance()
-    }
+    #[external]
+    fn contractBalance(self: @ContractState) -> u256 { starknet::contract::contract_balance() }
 
-    #[view]
-    fn lastPlayedBlock(self: @ContractState, player: ContractAddress) -> u64 {
-        self.last_played_block.read(player)
-    }
+    #[external]
+    fn lastPlayedBlock(self: @ContractState, player: ContractAddress) -> u64 { self.last_played_block.read(player) }
 
-    #[view]
-    fn pendingPrizes(self: @ContractState, player: ContractAddress) -> u256 {
-        self.pending_prizes.read(player)
-    }
+    #[external]
+    fn pendingPrizes(self: @ContractState, player: ContractAddress) -> u256 { self.pending_prizes.read(player) }
 
-    #[view]
-    fn nextAllowedBlock(self: @ContractState, player: ContractAddress) -> u64 {
-        self.last_played_block.read(player) + 1_u64
-    }
+    #[external]
+    fn nextAllowedBlock(self: @ContractState, player: ContractAddress) -> u64 { self.last_played_block.read(player) + 1_u64 }
 
-    #[view]
+    #[external]
     fn canPlayNow(self: @ContractState, player: ContractAddress) -> bool {
         let cur = get_block_number();
         cur >= self.nextAllowedBlock(player)
     }
 
     // --- Write ---
-    #[external(v0)]
+    #[external]
     #[payable]
     fn play(ref self: ContractState, user_salt: felt252) -> bool {
         let player = get_caller_address();
@@ -126,7 +103,6 @@ mod BlockInstantLottery {
         let last = self.last_played_block.read(player);
         assert(block > last, 'WAIT');
 
-        // simple on-chain RNG using Pedersen hash
         let h = pedersen(pedersen(player.into(), user_salt), block.into());
         let chance = self.win_chance_ppm.read();
         let won = (h.into() % PPM_DEN) < chance.into();
@@ -152,7 +128,7 @@ mod BlockInstantLottery {
         won
     }
 
-    #[external(v0)]
+    #[external]
     fn claim(ref self: ContractState) {
         let player = get_caller_address();
         let amount = self.pending_prizes.read(player);
@@ -162,23 +138,18 @@ mod BlockInstantLottery {
         self::Event::emit(PrizePaid { to: player, amount });
     }
 
-    #[external(v0)]
+    #[external]
     #[payable]
-    fn fund() {}
+    fn fund(ref self: ContractState) {}
 
-    #[external(v0)]
+    #[external]
     fn ownerWithdraw(ref self: ContractState, amount: u256) {
         assert(get_caller_address() == self.owner.read(), 'NOT_OWNER');
         starknet::eth::transfer_eth(self.owner.read(), amount);
     }
 
-    #[external(v0)]
-    fn setParams(
-        ref self: ContractState,
-        prize_wei: u256,
-        fee_wei: u256,
-        win_chance_ppm: u32,
-    ) {
+    #[external]
+    fn setParams(ref self: ContractState, prize_wei: u256, fee_wei: u256, win_chance_ppm: u32) {
         assert(get_caller_address() == self.owner.read(), 'NOT_OWNER');
         self.prize_wei.write(prize_wei);
         self.entry_fee_wei.write(fee_wei);
@@ -186,4 +157,3 @@ mod BlockInstantLottery {
         self::Event::emit(ParamsUpdated { prize_wei, entry_fee_wei: fee_wei, win_chance_ppm });
     }
 }
-
