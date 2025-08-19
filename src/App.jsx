@@ -4,7 +4,11 @@ import { formatEther, parseEther } from "ethers";
 import { Contract, uint256 } from "starknet";
 import logo from "./assets/tubbly-logo.svg";
 
-const CONTRACT_ADDRESS = "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
+// Address of the deployed lottery contract
+// Can be overridden via VITE_CONTRACT_ADDRESS env variable for flexibility
+const CONTRACT_ADDRESS =
+  import.meta.env.VITE_CONTRACT_ADDRESS ||
+  "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
 
 // Minimal ABI for the functions/events we use
 const ABI = [
@@ -40,7 +44,7 @@ const ABI = [
   { "type": "event", "name": "Result", "inputs": [
       { "name": "player", "type": "felt", "indexed": true },
       { "name": "won", "type": "bool", "indexed": false },
-      { "name": "prizeAmount", "type": "uint256", "indexed": false }
+      { "name": "prize_amount", "type": "uint256", "indexed": false }
   ] },
   { "type": "event", "name": "PrizePaid", "inputs": [
       { "name": "to", "type": "felt", "indexed": true },
@@ -51,9 +55,9 @@ const ABI = [
       { "name": "amount", "type": "uint256", "indexed": false }
   ] },
   { "type": "event", "name": "ParamsUpdated", "inputs": [
-      { "name": "prizeWei", "type": "uint256", "indexed": false },
-      { "name": "entryFeeWei", "type": "uint256", "indexed": false },
-      { "name": "winChancePpm", "type": "uint32", "indexed": false }
+      { "name": "prize_wei", "type": "uint256", "indexed": false },
+      { "name": "entry_fee_wei", "type": "uint256", "indexed": false },
+      { "name": "win_chance_ppm", "type": "uint32", "indexed": false }
   ] },
 ];
 
@@ -348,7 +352,7 @@ export default function App() {
             if (type === "Result") {
               return {
                 text: ev.args.won
-                  ? `Result → WIN ${formatEther(ev.args.prizeAmount)} ETH`
+                  ? `Result → WIN ${formatEther(ev.args.prize_amount)} ETH`
                   : "Result → Loss",
                 txHash: ev.transactionHash,
               };
@@ -411,10 +415,10 @@ export default function App() {
             const parsed = contract.interface.parseLog(log);
             if (parsed?.name === "Result") {
               won = parsed.args.won;
-              prize = toBigInt(parsed.args.prizeAmount);
+              prize = toBigInt(parsed.args.prize_amount);
               addLog({
                 text: parsed.args.won
-                  ? `Result → WIN ${formatEther(toBigInt(parsed.args.prizeAmount))} ETH`
+                  ? `Result → WIN ${formatEther(toBigInt(parsed.args.prize_amount))} ETH`
                   : "Result → Loss",
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
