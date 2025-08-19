@@ -376,10 +376,12 @@ export default function App() {
       setRejected(false);
 
       const saltVal = BigInt(salt || "0");
-      const tx = await contract.withOptions({ value: feeWei }).play(saltVal);
-      addLog({ text: `play(tx: ${shortHash(tx.hash)})`, txHash: tx.hash });
-      
-      const rcpt = await tx.wait();
+      const txHash = await contract
+        .withOptions({ value: feeWei })
+        .play(saltVal);
+      addLog({ text: `play(tx: ${shortHash(txHash)})`, txHash });
+
+      const rcpt = await provider.waitForTransaction(txHash);
       
       // POPRAWKA: Natychmiast po transakcji pobierz zaktualizowane dane
       const [newLastPlayed, newNext, newBlock] = await Promise.all([
@@ -395,7 +397,8 @@ export default function App() {
       let won = null;
       let prize = 0n;
       if (contract.interface?.parseLog) {
-        for (const log of rcpt.logs) {
+        const receiptLogs = rcpt.logs || rcpt.events || [];
+        for (const log of receiptLogs) {
           try {
             const parsed = contract.interface.parseLog(log);
             if (parsed?.name === "Result") {
@@ -405,19 +408,19 @@ export default function App() {
                 text: parsed.args.won
                   ? `Result → WIN ${formatEther(parsed.args.prizeAmount)} ETH`
                   : "Result → Loss",
-                txHash: rcpt.transactionHash,
+                txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
             }
             if (parsed?.name === "PrizePaid") {
               addLog({
                 text: `PrizePaid → ${formatEther(parsed.args.amount)} ETH`,
-                txHash: rcpt.transactionHash,
+                txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
             }
             if (parsed?.name === "PrizePending") {
               addLog({
                 text: `PrizePending → ${formatEther(parsed.args.amount)} ETH`,
-                txHash: rcpt.transactionHash,
+                txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
               // Aktualizuj pending prizes
               const newPending = await contract.pendingPrizes(account);
@@ -494,9 +497,9 @@ export default function App() {
     if (!contract) return;
     try {
       setLoading(true);
-      const tx = await contract.claim();
-      addLog({ text: `claim(tx: ${shortHash(tx.hash)})`, txHash: tx.hash });
-      await tx.wait();
+      const txHash = await contract.claim();
+      addLog({ text: `claim(tx: ${shortHash(txHash)})`, txHash });
+      await provider.waitForTransaction(txHash);
       setStatus("Claimed (if any pending)");
       // Odśwież pending prizes
       const newPending = await contract.pendingPrizes(account);
@@ -517,14 +520,14 @@ export default function App() {
       setStatus("");
       setProgressMessage("Funding in action...");
       setRejected(false);
-      const tx = await contract
+      const txHash = await contract
         .withOptions({ value: parseEther(amountEth || "0") })
         .fund();
       addLog({
-        text: `fund ${amountEth} ETH (tx: ${shortHash(tx.hash)})`,
-        txHash: tx.hash,
+        text: `fund ${amountEth} ETH (tx: ${shortHash(txHash)})`,
+        txHash,
       });
-      await tx.wait();
+      await provider.waitForTransaction(txHash);
       setStatus("Funded ✔");
     } catch (e) {
       if (
@@ -567,12 +570,12 @@ export default function App() {
       const prize = parseEther(pPrize || "0");
       const fee = parseEther(pFee || "0");
       const ppm = ppmFromPct(pPct || "0");
-      const tx = await contract.setParams(prize, fee, ppm);
+      const txHash = await contract.setParams(prize, fee, ppm);
       addLog({
-        text: `setParams → prize ${pPrize} ETH, fee ${pFee} ETH, chance ${pPct}%`,
-        txHash: tx.hash,
+        text: `setParams → prize ${pPrize} ETH, fee ${pFee} ETH, chance ${pPct}% (tx: ${shortHash(txHash)})`,
+        txHash,
       });
-      await tx.wait();
+      await provider.waitForTransaction(txHash);
       setStatus("Parameters updated");
     } catch (e) {
       setStatus(e?.shortMessage || e?.message || "setParams failed");
