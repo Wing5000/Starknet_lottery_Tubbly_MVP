@@ -10,29 +10,29 @@ const CONTRACT_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS ||
   "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
 
-// Fully qualified entrypoint names used by the Cairo v1 contract
+// Entry point names and events as exposed by the compiled contract ABI
 const FN = {
-  prizeWei: "BlockInstantLottery::prizeWei",
-  entryFeeWei: "BlockInstantLottery::entryFeeWei",
-  winChancePpm: "BlockInstantLottery::winChancePpm",
-  owner: "BlockInstantLottery::owner",
-  contractBalance: "BlockInstantLottery::contractBalance",
-  getUserLastPlayedBlock: "BlockInstantLottery::get_user_last_played_block",
-  getPendingPrizes: "BlockInstantLottery::get_pending_prizes",
-  getCanPlay: "BlockInstantLottery::get_can_play",
-  getNextAllowedBlock: "BlockInstantLottery::get_next_allowed_block",
-  play: "BlockInstantLottery::play",
-  claim: "BlockInstantLottery::claim",
-  fund: "BlockInstantLottery::fund",
-  ownerWithdraw: "BlockInstantLottery::ownerWithdraw",
-  setParams: "BlockInstantLottery::setParams",
+  prizeWei: "prizeWei",
+  entryFeeWei: "entryFeeWei",
+  winChancePpm: "winChancePpm",
+  owner: "owner",
+  contractBalance: "contractBalance",
+  getUserLastPlayedBlock: "get_user_last_played_block",
+  getPendingPrizes: "get_pending_prizes",
+  getCanPlay: "get_can_play",
+  getNextAllowedBlock: "get_next_allowed_block",
+  play: "play",
+  claim: "claim",
+  fund: "fund",
+  ownerWithdraw: "ownerWithdraw",
+  setParams: "setParams",
 };
 
 const EV = {
-  Result: "BlockInstantLottery::Result",
-  PrizePaid: "BlockInstantLottery::PrizePaid",
-  PrizePending: "BlockInstantLottery::PrizePending",
-  ParamsUpdated: "BlockInstantLottery::ParamsUpdated",
+  Result: "Result",
+  PrizePaid: "PrizePaid",
+  PrizePending: "PrizePending",
+  ParamsUpdated: "ParamsUpdated",
 };
 
 // Minimal ABI for the functions/events we use
