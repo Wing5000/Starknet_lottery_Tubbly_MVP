@@ -10,54 +10,79 @@ const CONTRACT_ADDRESS =
   import.meta.env.VITE_CONTRACT_ADDRESS ||
   "0x75d13ac0cb15587532e4c1a208d3ffddf97fb60c35c7be3b891388054def324";
 
+// Fully qualified entrypoint names used by the Cairo v1 contract
+const FN = {
+  prizeWei: "BlockInstantLottery::prizeWei",
+  entryFeeWei: "BlockInstantLottery::entryFeeWei",
+  winChancePpm: "BlockInstantLottery::winChancePpm",
+  owner: "BlockInstantLottery::owner",
+  contractBalance: "BlockInstantLottery::contractBalance",
+  getUserLastPlayedBlock: "BlockInstantLottery::get_user_last_played_block",
+  getPendingPrizes: "BlockInstantLottery::get_pending_prizes",
+  getCanPlay: "BlockInstantLottery::get_can_play",
+  getNextAllowedBlock: "BlockInstantLottery::get_next_allowed_block",
+  play: "BlockInstantLottery::play",
+  claim: "BlockInstantLottery::claim",
+  fund: "BlockInstantLottery::fund",
+  ownerWithdraw: "BlockInstantLottery::ownerWithdraw",
+  setParams: "BlockInstantLottery::setParams",
+};
+
+const EV = {
+  Result: "BlockInstantLottery::Result",
+  PrizePaid: "BlockInstantLottery::PrizePaid",
+  PrizePending: "BlockInstantLottery::PrizePending",
+  ParamsUpdated: "BlockInstantLottery::ParamsUpdated",
+};
+
 // Minimal ABI for the functions/events we use
 const ABI = [
   // --- Read ---
-  { "type": "function", "name": "prizeWei", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "entryFeeWei", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "winChancePpm", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint32" }] },
-  { "type": "function", "name": "owner", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "felt" }] },
-  { "type": "function", "name": "contractBalance", "stateMutability": "view", "inputs": [], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "get_user_last_played_block", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "felt" }] },
-  { "type": "function", "name": "get_pending_prizes", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "uint256" }] },
-  { "type": "function", "name": "get_can_play", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "bool" }] },
-  { "type": "function", "name": "get_next_allowed_block", "stateMutability": "view", "inputs": [{ "name": "user", "type": "felt" }], "outputs": [{ "type": "felt" }] },
+  { type: "function", name: FN.prizeWei, stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: FN.entryFeeWei, stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: FN.winChancePpm, stateMutability: "view", inputs: [], outputs: [{ type: "uint32" }] },
+  { type: "function", name: FN.owner, stateMutability: "view", inputs: [], outputs: [{ type: "felt" }] },
+  { type: "function", name: FN.contractBalance, stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  { type: "function", name: FN.getUserLastPlayedBlock, stateMutability: "view", inputs: [{ name: "user", type: "felt" }], outputs: [{ type: "felt" }] },
+  { type: "function", name: FN.getPendingPrizes, stateMutability: "view", inputs: [{ name: "user", type: "felt" }], outputs: [{ type: "uint256" }] },
+  { type: "function", name: FN.getCanPlay, stateMutability: "view", inputs: [{ name: "user", type: "felt" }], outputs: [{ type: "bool" }] },
+  { type: "function", name: FN.getNextAllowedBlock, stateMutability: "view", inputs: [{ name: "user", type: "felt" }], outputs: [{ type: "felt" }] },
 
   // --- Write ---
   {
-    "type": "function",
-    "name": "play",
-    "stateMutability": "payable",
-    "inputs": [{ "name": "userSalt", "type": "felt" }],
-    "outputs": [{ "type": "bool" }]
+    type: "function",
+    name: FN.play,
+    stateMutability: "payable",
+    inputs: [{ name: "userSalt", type: "felt" }],
+    outputs: [{ type: "bool" }]
   },
-  { "type": "function", "name": "claim", "stateMutability": "nonpayable", "inputs": [], "outputs": [] },
-  { "type": "function", "name": "fund", "stateMutability": "payable", "inputs": [], "outputs": [] },
-  { "type": "function", "name": "ownerWithdraw", "stateMutability": "nonpayable", "inputs": [{ "name": "amount", "type": "uint256" }], "outputs": [] },
-  { "type": "function", "name": "setParams", "stateMutability": "nonpayable", "inputs": [
-      { "name": "_prizeWei", "type": "uint256" },
-      { "name": "_feeWei", "type": "uint256" },
-      { "name": "_winChancePpm", "type": "uint32" }
-  ], "outputs": [] },
+  { type: "function", name: FN.claim, stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { type: "function", name: FN.fund, stateMutability: "payable", inputs: [], outputs: [] },
+  { type: "function", name: FN.ownerWithdraw, stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { type: "function", name: FN.setParams, stateMutability: "nonpayable", inputs: [
+      { name: "_prizeWei", type: "uint256" },
+      { name: "_feeWei", type: "uint256" },
+      { name: "_winChancePpm", type: "uint32" }
+  ], outputs: [] },
 
   // --- Events we decode ---
-  { "type": "event", "name": "Result", "inputs": [
-      { "name": "player", "type": "felt", "indexed": true },
-      { "name": "won", "type": "bool", "indexed": false },
-      { "name": "prize_amount", "type": "uint256", "indexed": false }
+  { type: "event", name: EV.Result, inputs: [
+      { name: "player", type: "felt", indexed: true },
+      { name: "won", type: "bool", indexed: false },
+      { name: "prize_amount", type: "uint256", indexed: false }
   ] },
-  { "type": "event", "name": "PrizePaid", "inputs": [
-      { "name": "to", "type": "felt", "indexed": true },
-      { "name": "amount", "type": "uint256", "indexed": false }
+  { type: "event", name: EV.PrizePaid, inputs: [
+      { name: "to", type: "felt", indexed: true },
+      { name: "amount", type: "uint256", indexed: false }
   ] },
-  { "type": "event", "name": "PrizePending", "inputs": [
-      { "name": "to", "type": "felt", "indexed": true },
-      { "name": "amount", "type": "uint256", "indexed": false }
+  { type: "event", name: EV.PrizePending, inputs: [
+      { name: "to", type: "felt", indexed: true },
+      { name: "amount", type: "uint256", indexed: false }
   ] },
-  { "type": "event", "name": "ParamsUpdated", "inputs": [
-      { "name": "prize_wei", "type": "uint256", "indexed": false },
-      { "name": "entry_fee_wei", "type": "uint256", "indexed": false },
-      { "name": "win_chance_ppm", "type": "uint32", "indexed": false }
+  { type: "event", name: EV.ParamsUpdated, inputs: [
+      { name: "prize_wei", type: "uint256", indexed: false },
+      { name: "entry_fee_wei", type: "uint256", indexed: false },
+      { name: "win_chance_ppm", type: "uint32", indexed: false }
   ] },
 ];
 
@@ -168,9 +193,9 @@ export default function App() {
       try {
         const [blk, next, last, can] = await Promise.all([
           wallet.provider.getBlockNumber(),
-          c.get_next_allowed_block(accountAddr),
-          c.get_user_last_played_block(accountAddr),
-          c.get_can_play(accountAddr),
+          c[FN.getNextAllowedBlock](accountAddr),
+          c[FN.getUserLastPlayedBlock](accountAddr),
+          c[FN.getCanPlay](accountAddr),
         ]);
         setCurrentBlock(BigInt(blk));
         setNextAllowedBlock(toBigInt(next));
@@ -204,10 +229,10 @@ export default function App() {
     async function loadBasics() {
       try {
         const [p, f, w, bal] = await Promise.all([
-          contract.prizeWei(),
-          contract.entryFeeWei(),
-          contract.winChancePpm(),
-          contract.contractBalance(),
+          contract[FN.prizeWei](),
+          contract[FN.entryFeeWei](),
+          contract[FN.winChancePpm](),
+          contract[FN.contractBalance](),
         ]);
         if (!mounted) return;
         setPrizeWei(toBigInt(p));
@@ -237,8 +262,8 @@ export default function App() {
       try {
         const [blockNumber, next, can] = await Promise.all([
           provider.getBlockNumber(),
-          contract.get_next_allowed_block(account),
-          contract.get_can_play(account),
+          contract[FN.getNextAllowedBlock](account),
+          contract[FN.getCanPlay](account),
         ]);
         setCurrentBlock(BigInt(blockNumber));
         if (mounted) {
@@ -263,7 +288,7 @@ export default function App() {
     if (!contract || !provider) return;
     if (!contract.queryFilter || !contract.filters) return;
     let mounted = true;
-    const filter = contract.filters.Result();
+    const filter = contract.filters[EV.Result]();
 
     async function loadRecent() {
       try {
@@ -301,10 +326,10 @@ export default function App() {
     async function loadUserData() {
       try {
         const [pend, last, next, can, blk] = await Promise.all([
-          contract.get_pending_prizes(account),
-          contract.get_user_last_played_block(account),
-          contract.get_next_allowed_block(account),
-          contract.get_can_play(account),
+          contract[FN.getPendingPrizes](account),
+          contract[FN.getUserLastPlayedBlock](account),
+          contract[FN.getNextAllowedBlock](account),
+          contract[FN.getCanPlay](account),
           provider.getBlockNumber(),
         ]);
         if (!mounted) return;
@@ -338,15 +363,15 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const resultLogs = (await contract.queryFilter(contract.filters.Result(account))).map((ev) => ({
+        const resultLogs = (await contract.queryFilter(contract.filters[EV.Result](account))).map((ev) => ({
           type: "Result",
           ev,
         }));
-        const paidLogs = (await contract.queryFilter(contract.filters.PrizePaid(account))).map((ev) => ({
+        const paidLogs = (await contract.queryFilter(contract.filters[EV.PrizePaid](account))).map((ev) => ({
           type: "PrizePaid",
           ev,
         }));
-        const pendingLogs = (await contract.queryFilter(contract.filters.PrizePending(account))).map((ev) => ({
+        const pendingLogs = (await contract.queryFilter(contract.filters[EV.PrizePending](account))).map((ev) => ({
           type: "PrizePending",
           ev,
         }));
@@ -394,17 +419,16 @@ export default function App() {
 
       const saltVal = BigInt(salt || "0");
       const txHash = await contract
-        .withOptions({ value: feeWei })
-        .play(saltVal);
+        .withOptions({ value: feeWei })[FN.play](saltVal);
       addLog({ text: `play(tx: ${shortHash(txHash)})`, txHash });
 
       const rcpt = await provider.waitForTransaction(txHash);
       
       // POPRAWKA: Natychmiast po transakcji pobierz zaktualizowane dane
       const [newLastPlayed, newNext, newCan, newBlock] = await Promise.all([
-        contract.get_user_last_played_block(account),
-        contract.get_next_allowed_block(account),
-        contract.get_can_play(account),
+          contract[FN.getUserLastPlayedBlock](account),
+          contract[FN.getNextAllowedBlock](account),
+          contract[FN.getCanPlay](account),
         provider.getBlockNumber()
       ]);
 
@@ -420,31 +444,31 @@ export default function App() {
         for (const log of receiptLogs) {
           try {
             const parsed = contract.interface.parseLog(log);
-            if (parsed?.name === "Result") {
-              won = parsed.args.won;
-              prize = toBigInt(parsed.args.prize_amount);
-              addLog({
+          if (parsed?.name === EV.Result) {
+            won = parsed.args.won;
+            prize = toBigInt(parsed.args.prize_amount);
+            addLog({
                 text: parsed.args.won
                   ? `Result → WIN ${formatEther(toBigInt(parsed.args.prize_amount))} ETH`
                   : "Result → Loss",
                 txHash: rcpt.transaction_hash || rcpt.transactionHash,
               });
             }
-            if (parsed?.name === "PrizePaid") {
-              addLog({
-                text: `PrizePaid → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
-                txHash: rcpt.transaction_hash || rcpt.transactionHash,
-              });
-            }
-            if (parsed?.name === "PrizePending") {
-              addLog({
-                text: `PrizePending → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
-                txHash: rcpt.transaction_hash || rcpt.transactionHash,
-              });
-              // Aktualizuj pending prizes
-              const newPending = await contract.get_pending_prizes(account);
-              setPendingMine(toBigInt(newPending));
-            }
+          if (parsed?.name === EV.PrizePaid) {
+            addLog({
+              text: `PrizePaid → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
+              txHash: rcpt.transaction_hash || rcpt.transactionHash,
+            });
+          }
+          if (parsed?.name === EV.PrizePending) {
+            addLog({
+              text: `PrizePending → ${formatEther(toBigInt(parsed.args.amount))} ETH`,
+              txHash: rcpt.transaction_hash || rcpt.transactionHash,
+            });
+            // Aktualizuj pending prizes
+            const newPending = await contract[FN.getPendingPrizes](account);
+            setPendingMine(toBigInt(newPending));
+          }
           } catch {}
         }
       }
@@ -486,14 +510,14 @@ export default function App() {
         bal,
       ] = await Promise.all([
         provider.getBlockNumber(),
-        contract.get_next_allowed_block(account),
-        contract.get_user_last_played_block(account),
-        contract.get_can_play(account),
-        contract.get_pending_prizes(account),
-        contract.prizeWei(),
-        contract.entryFeeWei(),
-        contract.winChancePpm(),
-        contract.contractBalance(),
+        contract[FN.getNextAllowedBlock](account),
+        contract[FN.getUserLastPlayedBlock](account),
+        contract[FN.getCanPlay](account),
+        contract[FN.getPendingPrizes](account),
+        contract[FN.prizeWei](),
+        contract[FN.entryFeeWei](),
+        contract[FN.winChancePpm](),
+        contract[FN.contractBalance](),
       ]);
       const current = BigInt(blk);
       const nextVal = toBigInt(next);
@@ -521,12 +545,12 @@ export default function App() {
     if (!contract) return;
     try {
       setLoading(true);
-      const txHash = await contract.claim();
+      const txHash = await contract[FN.claim]();
       addLog({ text: `claim(tx: ${shortHash(txHash)})`, txHash });
       await provider.waitForTransaction(txHash);
       setStatus("Claimed (if any pending)");
       // Odśwież pending prizes
-      const newPending = await contract.get_pending_prizes(account);
+      const newPending = await contract[FN.getPendingPrizes](account);
       setPendingMine(toBigInt(newPending));
     } catch (e) {
       setStatus(e?.shortMessage || e?.message || "Claim failed");
@@ -545,8 +569,7 @@ export default function App() {
       setProgressMessage("Funding in action...");
       setRejected(false);
       const txHash = await contract
-        .withOptions({ value: parseEther(amountEth || "0") })
-        .fund();
+        .withOptions({ value: parseEther(amountEth || "0") })[FN.fund]();
       addLog({
         text: `fund ${amountEth} ETH (tx: ${shortHash(txHash)})`,
         txHash,
@@ -581,7 +604,7 @@ export default function App() {
     (async () => {
       if (!contract || !account) return;
       try {
-        const own = await contract.owner();
+        const own = await contract[FN.owner]();
         setIsOwner(own?.toLowerCase?.() === account?.toLowerCase?.());
       } catch {}
     })();
@@ -594,7 +617,7 @@ export default function App() {
       const prize = parseEther(pPrize || "0");
       const fee = parseEther(pFee || "0");
       const ppm = ppmFromPct(pPct || "0");
-      const txHash = await contract.setParams(prize, fee, ppm);
+      const txHash = await contract[FN.setParams](prize, fee, ppm);
       addLog({
         text: `setParams → prize ${pPrize} ETH, fee ${pFee} ETH, chance ${pPct}% (tx: ${shortHash(txHash)})`,
         txHash,
