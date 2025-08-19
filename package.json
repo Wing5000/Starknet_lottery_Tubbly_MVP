@@ -12,7 +12,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "ethers": "^6.13.2",
-    "framer-motion": "^11.3.31"
+    "framer-motion": "^11.3.31",
+    "starknet": "^7.6.4"
   },
   "devDependencies": {
     "vite": "^5.3.4",
